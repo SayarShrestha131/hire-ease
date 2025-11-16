@@ -5,17 +5,18 @@ import { AuthInput } from '../components/auth/AuthInput';
 import { AuthButton } from '../components/auth/AuthButton';
 import { useForm } from '../hooks/useForm';
 import { validateEmail, validatePassword } from '../utils/validation';
+import { authService } from '../services/authService';
 
 interface LoginScreenProps {
   onForgotPassword?: () => void;
   onSignUp?: () => void;
-  onLogin?: (email: string, password: string) => Promise<void>;
+  onLoginSuccess?: () => void;
 }
 
 export function LoginScreen({
   onForgotPassword,
   onSignUp,
-  onLogin,
+  onLoginSuccess,
 }: LoginScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string>();
@@ -43,19 +44,22 @@ export function LoginScreen({
       return;
     }
 
-    // Simulate authentication
     setIsLoading(true);
     
     try {
-      if (onLogin) {
-        await onLogin(form.values.email, form.values.password);
-      } else {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        console.log('Login successful:', form.values.email);
+      const response = await authService.login({
+        email: form.values.email,
+        password: form.values.password,
+      });
+      
+      console.log('Login successful:', response.user);
+      
+      if (onLoginSuccess) {
+        onLoginSuccess();
       }
-    } catch (error) {
-      setGeneralError('Invalid email or password. Please try again.');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Invalid email or password. Please try again.';
+      setGeneralError(errorMessage);
     } finally {
       setIsLoading(false);
     }

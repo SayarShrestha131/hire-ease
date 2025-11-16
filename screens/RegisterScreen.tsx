@@ -11,17 +11,14 @@ import {
   validatePassword,
   validatePasswordMatch,
 } from '../utils/validation';
+import { authService } from '../services/authService';
 
 interface RegisterScreenProps {
   onSignIn?: () => void;
-  onRegister?: (
-    name: string,
-    email: string,
-    password: string
-  ) => Promise<void>;
+  onRegisterSuccess?: (email: string) => void;
 }
 
-export function RegisterScreen({ onSignIn, onRegister }: RegisterScreenProps) {
+export function RegisterScreen({ onSignIn, onRegisterSuccess }: RegisterScreenProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [generalError, setGeneralError] = useState<string>();
 
@@ -58,26 +55,24 @@ export function RegisterScreen({ onSignIn, onRegister }: RegisterScreenProps) {
       return;
     }
 
-    // Simulate registration
     setIsLoading(true);
 
     try {
-      if (onRegister) {
-        await onRegister(
-          form.values.name,
-          form.values.email,
-          form.values.password
-        );
-      } else {
-        // Simulate API call
-        await new Promise((resolve) => setTimeout(resolve, 1500));
-        console.log('Registration successful:', {
-          name: form.values.name,
-          email: form.values.email,
-        });
+      const response = await authService.signup({
+        name: form.values.name,
+        email: form.values.email,
+        password: form.values.password,
+      });
+      
+      console.log('Registration successful, verification required');
+      
+      // Navigate to email verification screen
+      if (onRegisterSuccess) {
+        onRegisterSuccess(form.values.email);
       }
-    } catch (error) {
-      setGeneralError('Registration failed. Please try again.');
+    } catch (error: any) {
+      const errorMessage = error.response?.data?.message || 'Registration failed. Please try again.';
+      setGeneralError(errorMessage);
     } finally {
       setIsLoading(false);
     }
